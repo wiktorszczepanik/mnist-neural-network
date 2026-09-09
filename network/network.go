@@ -1,6 +1,9 @@
 package network
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 type NeuralNetworkOperations interface {
 	Execute(pattern Pattern) (outputLayer []float64, err error)
@@ -53,8 +56,8 @@ func (net *NeuralNetwork) Execute(pattern Pattern) (outputLayer []float64, err e
 	for layerIndex := 1; layerIndex < len(net.LayerSizes); layerIndex++ {
 		for neuronIndex := 0; neuronIndex < net.Layers[layerIndex].Length; neuronIndex++ {
 			value = 0.0
-			for connection := 0; connection < net.Layers[layerIndex-1].Length; connection++ {
-				value += net.Layers[layerIndex].Neurons[neuronIndex].Weights[connection] * net.Layers[layerIndex-1].Neurons[neuronIndex].Value
+			for link := 0; link < net.Layers[layerIndex-1].Length; link++ {
+				value += net.Layers[layerIndex].Neurons[neuronIndex].Weights[link] * net.Layers[layerIndex-1].Neurons[neuronIndex].Value
 			}
 			value += net.Layers[layerIndex].Neurons[neuronIndex].Bias
 			net.Layers[layerIndex].Neurons[neuronIndex].Value = net.ActivationFunction(value)
@@ -66,5 +69,38 @@ func (net *NeuralNetwork) Execute(pattern Pattern) (outputLayer []float64, err e
 	for i := range outputLayer {
 		outputLayer[i] = net.Layers[lastLayerIndex].Neurons[i].Value
 	}
-	return outputLayer, err
+	return outputLayer, nil
+}
+
+func (net *NeuralNetwork) BackPropagate(pattern Pattern) (deltaError float64) {
+	outputLayer, _ := net.Execute(pattern)
+	var countedError float64 = 0.0
+	// Output layer
+	for neuronIndex := 0; neuronIndex < net.Layers[len(net.LayerSizes)-1].Length; neuronIndex++ {
+		countedError = pattern.MultipleExpectation[neuronIndex] - outputLayer[neuronIndex]
+		net.Layers[len(net.LayerSizes)-1].Neurons[neuronIndex].Delta = countedError * net.ActivationDerivative(outputLayer[neuronIndex])
+	}
+	// Left layers
+	for layerIndex := len(net.LayerSizes) - 2; layerIndex >= 0; layerIndex-- {
+		for neuronIndex := 0; neuronIndex < net.LayerSizes[layerIndex]; neuronIndex++ {
+			countedError = 0.0
+			for link := 0; link < net.Layers[layerIndex+1].Length; link++ {
+				countedError += net.Layers[layerIndex+1].Neurons[link].Delta * net.Layers[layerIndex+1].Neurons[link].Weights[neuronIndex]
+			}
+			net.Layers[layerIndex].Neurons[neuronIndex].Delta = countedError * net.ActivationDerivative(net.Layers[layerIndex].Neurons[neuronIndex].Value)
+		}
+		for neuronIndex := 0; neuronIndex < net.Layers[layerIndex+1].Length; neuronIndex++ {
+			for link := 0; link < net.Layers[layerIndex].Length; link++ {
+				net.Layers[layerIndex+1].Neurons[neuronIndex].Weights[link] +=
+					net.LearningRate * net.Layers[layerIndex+1].Neurons[neuronIndex].Delta * net.Layers[layerIndex].Neurons[link].Value
+			}
+			net.Layers[layerIndex+1].Neurons[neuronIndex].Bias += net.LearningRate * net.Layers[layerIndex+1].Neurons[neuronIndex].Delta
+		}
+	}
+	// Global errors as sum of abs difference
+	for i := 0; i < len(pattern.MultipleExpectation); i++ {
+		deltaError += math.Abs(outputLayer[i] - pattern.MultipleExpectation[i])
+	}
+	deltaError = deltaError / float64(len(pattern.MultipleExpectation))
+	return deltaError
 }
