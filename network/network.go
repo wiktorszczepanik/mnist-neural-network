@@ -5,10 +5,6 @@ import (
 	"math"
 )
 
-type NeuralNetworkOperations interface {
-	Execute(pattern Pattern) (outputLayer []float64, err error)
-}
-
 type NeuralNetwork struct {
 	LearningRate         float64
 	LayerSizes           []int
@@ -43,10 +39,16 @@ func validatePattern(layerSizes []int, pattern Pattern) error {
 	return nil
 }
 
-func (net *NeuralNetwork) Execute(pattern Pattern) (outputLayer []float64, err error) {
+func (net *NeuralNetwork) Predict(pattern Pattern) (outputLayer []float64, err error) {
 	if err := validatePattern(net.LayerSizes, pattern); err != nil {
 		return nil, err
 	}
+	outputLayer, _ = net.Execute(pattern)
+	return outputLayer, nil
+
+}
+
+func (net *NeuralNetwork) Execute(pattern Pattern) (outputLayer []float64, err error) {
 	// Set init layer with pattern values
 	for i := 0; i < len(pattern.Features); i++ {
 		net.Layers[0].Neurons[i].Value = pattern.Features[i]
@@ -103,4 +105,12 @@ func (net *NeuralNetwork) BackPropagate(pattern Pattern) (deltaError float64) {
 	}
 	deltaError = deltaError / float64(len(pattern.MultipleExpectation))
 	return deltaError
+}
+
+func (net *NeuralNetwork) Train(patterns []Pattern, epochs int) {
+	for range epochs {
+		for _, pattern := range patterns {
+			net.BackPropagate(pattern)
+		}
+	}
 }
