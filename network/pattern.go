@@ -1,6 +1,6 @@
-package input
+package network
 
 type Pattern struct {
 	Features            []float64
-	MultipleExpectation []string
+	MultipleExpectation []float64
 }
