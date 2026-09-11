@@ -114,6 +114,7 @@ func (net *NeuralNetwork) backPropagate(pattern Pattern) (deltaError float64) {
 
 func (net *NeuralNetwork) Train(patterns []Pattern, epochs int) {
 	for range epochs {
+		// Shuffle here
 		for _, pattern := range patterns {
 			net.backPropagate(pattern)
 		}
