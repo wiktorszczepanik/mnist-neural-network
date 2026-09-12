@@ -2,7 +2,6 @@ package network
 
 import (
 	"math"
-	"math/rand"
 )
 
 const ScalingFactor = 0.1
@@ -24,7 +23,7 @@ func RandomNeuronInitValues(neuron *Neuron, weightsNumber int) {
 func heInit(neuron *Neuron, weightsNumber int) {
 	stddev := math.Sqrt(2.0 / float64(weightsNumber))
 	for i := range weightsNumber {
-		neuron.Weights[i] = rand.NormFloat64() * stddev
+		neuron.Weights[i] = rng.NormFloat64() * stddev
 	}
 	neuron.Bias = 0
 }
@@ -32,7 +31,7 @@ func heInit(neuron *Neuron, weightsNumber int) {
 func gaussianInit(neuron *Neuron, weightsNumber int) {
 	neuron.Weights = make([]float64, weightsNumber)
 	for i := range weightsNumber {
-		neuron.Weights[i] = rand.NormFloat64() * ScalingFactor
+		neuron.Weights[i] = rng.NormFloat64() * ScalingFactor
 	}
-	neuron.Bias = rand.NormFloat64() * ScalingFactor
+	neuron.Bias = rng.NormFloat64() * ScalingFactor
 }

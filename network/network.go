@@ -6,8 +6,12 @@ import (
 	"log"
 	"log/slog"
 	"math"
+	"math/rand"
 	"os"
+	"path/filepath"
 )
+
+var rng = rand.New(rand.NewSource(42))
 
 type NeuralNetwork struct {
 	LearningRate float64
@@ -124,11 +128,9 @@ func (net *NeuralNetwork) backPropagate(pattern Pattern) (deltaError float64) {
 }
 
 func (net *NeuralNetwork) Train(patterns []Pattern, epochs int) {
-	slog.Info(
-		"Neural Network training", "pattern_elements", len(patterns), "epochs", epochs,
-	)
+	slog.Info("Neural Network training", "pattern_elements", len(patterns), "epochs", epochs)
 	for epoch := range epochs {
-		// Shuffle here
+		shuffle(patterns)
 		for _, pattern := range patterns {
 			net.backPropagate(pattern)
 		}
@@ -136,19 +138,47 @@ func (net *NeuralNetwork) Train(patterns []Pattern, epochs int) {
 	}
 }
 
+func shuffle(patterns []Pattern) {
+	// Fisher Yates shuffle
+	for i := len(patterns) - 1; i > 0; i-- {
+		j := rng.Intn(i + 1)
+		patterns[i], patterns[j] = patterns[j], patterns[i]
+	}
+
+}
+
+//func (net *NeuralNetwork) Save(path string) error {
+//	data, err := json.Marshal(net)
+//	if err != nil {
+//		slog.Error("serialization process", "file", path)
+//		return err
+//	}
+//	err = os.WriteFile(path, data, 0644)
+//	if err != nil {
+//		slog.Error("saving file: ", path)
+//		return err
+//	}
+//	slog.Info("saved model", "file", path)
+//	return err
+//}
+
 func (net *NeuralNetwork) Save(path string) error {
 	data, err := json.Marshal(net)
 	if err != nil {
-		slog.Error("serialization process", "file", path)
+		slog.Error("serialization process", "file", path, "error", err)
 		return err
 	}
-	err = os.WriteFile(path, data, 0644)
-	if err != nil {
-		slog.Error("saving file: ", path)
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		slog.Error("creating directory", "directory", dir, "error", err)
+		return err
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		slog.Error("saving file", "file", path, "error", err)
 		return err
 	}
 	slog.Info("saved model", "file", path)
-	return err
+	return nil
 }
 
 func Load(path string) (net *NeuralNetwork, err error) {
@@ -180,4 +210,16 @@ func (net *NeuralNetwork) Test(patterns []Pattern) (accuracy float64) {
 	accuracy = float64(correctPredictions) / float64(allPredictions)
 	slog.Info("accuracy", "value", accuracy*100)
 	return accuracy
+}
+
+func (net *NeuralNetwork) TrainAndTest(patterns []Pattern, epochs int, testPatterns []Pattern) {
+	slog.Info("Neural Network training", "pattern_elements", len(patterns), "epochs", epochs)
+	for epoch := range epochs {
+		shuffle(patterns)
+		for _, pattern := range patterns {
+			net.backPropagate(pattern)
+		}
+		log.Printf("epoch [%d/%d]", epoch+1, epochs)
+		net.Test(testPatterns)
+	}
 }

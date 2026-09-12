@@ -37,3 +37,11 @@ func ConvertFromImages(images []input.Image) (patterns []Pattern) {
 	}
 	return patterns
 }
+
+func ConvertFromImage(image input.Image) (pattern Pattern) {
+	// Images Pixels to Pattern Features
+	for i := range image.Pixels {
+		pattern.Features[i] = float64(image.Pixels[i]) / 255.0
+	}
+	return pattern
+}
