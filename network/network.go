@@ -147,21 +147,6 @@ func shuffle(patterns []Pattern) {
 
 }
 
-//func (net *NeuralNetwork) Save(path string) error {
-//	data, err := json.Marshal(net)
-//	if err != nil {
-//		slog.Error("serialization process", "file", path)
-//		return err
-//	}
-//	err = os.WriteFile(path, data, 0644)
-//	if err != nil {
-//		slog.Error("saving file: ", path)
-//		return err
-//	}
-//	slog.Info("saved model", "file", path)
-//	return err
-//}
-
 func (net *NeuralNetwork) Save(path string) error {
 	data, err := json.Marshal(net)
 	if err != nil {
