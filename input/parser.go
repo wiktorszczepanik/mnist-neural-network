@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"log/slog"
 	"os"
 )
 
@@ -28,6 +29,7 @@ func GetImages(labelPath, pixelsPath string) (images []Image, err error) {
 		end := start + step
 		images[i] = Image{label, pixels[start:end]}
 	}
+	slog.Info("loaded", "labels", labelPath, "pixels", pixelsPath)
 	return images, nil
 }
 
